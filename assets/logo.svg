@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180" width="760" height="180">
+  <rect width="760" height="180" fill="#0E1520"/>
+  <g transform="translate(36,34)">
+    <rect x="0" y="0" width="112" height="112" rx="24" fill="none" stroke="#F5B301" stroke-width="8"/>
+    <path d="M80 34 a34 34 0 1 0 0 49 a26.5 26.5 0 1 1 0 -49 z" fill="#F5B301"/>
+    <path d="M34 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#E6EDF5"/>
+  </g>
+  <text x="182" y="82" font-family="ui-monospace,'JetBrains Mono',Menlo,monospace" font-size="46" font-weight="700" fill="#E6EDF5" letter-spacing="-1">NIGHTJAR</text>
+  <text x="182" y="132" font-family="ui-monospace,'JetBrains Mono',Menlo,monospace" font-size="46" font-weight="700" fill="#F5B301" letter-spacing="10">TOOLS</text>
+  <rect x="392" y="100" width="15" height="32" fill="#3B9EFF"/>
+</svg>
