@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightjar Tools — small tools for Home Assistant and the homelab</title>
+<meta name="description" content="Small tools for Home Assistant and the homelab. Everything runs offline — no telemetry, no accounts, nothing sent anywhere.">
+<meta property="og:title" content="Nightjar Tools">
+<meta property="og:description" content="Small tools for Home Assistant and the homelab. Runs offline. Nothing is sent anywhere.">
+<meta property="og:image" content="assets/banner.png">
+<link rel="icon" href="assets/avatar.svg">
+<style>
+  :root{
+    --bg:#0E1520; --surface:#141F2E; --amber:#F5B301; --blue:#3B9EFF;
+    --text:#E6EDF5; --muted:#8FA3BA; --line:#22314a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:ui-monospace,'JetBrains Mono','SFMono-Regular',Menlo,Consolas,monospace;
+    line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px}
+  header{padding:72px 0 8px}
+  .brand{display:flex;align-items:flex-start;gap:22px;margin-bottom:34px}
+  .brand>svg{margin-top:4px}
+  .brand svg{flex:0 0 auto}
+  h1{font-size:clamp(28px,5vw,42px);margin:0;letter-spacing:-1px;line-height:1.15}
+  .promise{color:var(--amber);font-size:clamp(15px,2.4vw,19px);margin:10px 0 0}
+  .sub{color:var(--muted);font-size:clamp(14px,2.2vw,17px);margin:6px 0 0}
+  h2{font-size:13px;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;
+     font-weight:600;margin:64px 0 18px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .card{
+    display:block;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:24px 26px;margin-bottom:16px;text-decoration:none;color:inherit;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .card:hover{border-color:var(--amber);transform:translateY(-2px)}
+  .card h3{margin:0 0 8px;font-size:19px;color:var(--text)}
+  .card p{margin:0;color:var(--muted);font-size:15px}
+  .tag{display:inline-block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+       color:var(--bg);background:var(--amber);border-radius:5px;padding:3px 9px;
+       margin-left:10px;vertical-align:2px;font-weight:700}
+  .note{color:var(--muted);font-size:14px;margin:-4px 0 22px}
+  p.body{color:var(--muted);font-size:16px}
+  p.body strong{color:var(--text)}
+  a.plain{color:var(--blue);text-decoration:none;border-bottom:1px solid transparent}
+  a.plain:hover{border-bottom-color:var(--blue)}
+  footer{margin:84px 0 60px;padding-top:26px;border-top:1px solid var(--line);
+         color:var(--muted);font-size:14px}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <svg width="90" height="90" viewBox="0 0 512 512" aria-label="Nightjar Tools">
+        <rect width="512" height="512" rx="96" fill="#0E1520"/>
+        <g transform="translate(116,116)">
+          <rect x="0" y="0" width="280" height="280" rx="56" fill="none" stroke="#F5B301" stroke-width="20"/>
+          <path d="M200 84 a84 84 0 1 0 0 122 a66 66 0 1 1 0 -122 z" fill="#F5B301"/>
+          <path d="M84 74 l7 17 17 7 -17 7 -7 17 -7 -17 -17 -7 17 -7 z" fill="#E6EDF5"/>
+        </g>
+      </svg>
+      <div>
+        <h1>Nightjar Tools</h1>
+        <p class="sub">Small tools for Home Assistant and the homelab.</p>
+        <p class="promise">Runs offline. Nothing is sent anywhere.</p>
+      </div>
+    </div>
+
+    <p class="body">I build small, sharp tools for Home Assistant and self-hosted setups —
+    the kind of thing you need once, badly, and can't find a straight answer for.
+    Everything here runs entirely on your own machine. <strong>No accounts, no telemetry,
+    no cloud service that can disappear in two years.</strong></p>
+  </header>
+
+  <h2>Free tools</h2>
+  <p class="note">Open in your browser and use. Nothing to install, nothing to sign up for.</p>
+
+  <a class="card" href="channel-planner/">
+    <h3>Zigbee / Wi-Fi / Thread Channel Planner <span class="tag">Free</span></h3>
+    <p>Zigbee, Thread and Wi-Fi all share the 2.4 GHz band, and Wi-Fi is roughly a thousand
+    times louder. Tell it what's in the air around you and it works out where your mesh
+    should sit — with a reason for every channel.</p>
+  </a>
+
+  <a class="card" href="power-calc/">
+    <h3>Homelab Running-Cost Calculator <span class="tag">Free</span></h3>
+    <p>What a home server actually costs to run. Annual running cost, five-year total
+    ownership, and an honest comparison against renting the equivalent in the cloud.</p>
+  </a>
+
+  <h2>Paid tools</h2>
+  <p class="note">Config packs, audit tools and dashboards for Home Assistant.</p>
+
+  <a class="card" href="https://blakesivon.gumroad.com" rel="noopener">
+    <h3>The full catalogue →</h3>
+    <p>Recorder tuning, entity renaming, backup monitoring, kiosk dashboards, port 80
+    migration and more. Each one ships with a README that tells you what it does
+    <em>not</em> do before you buy.</p>
+  </a>
+
+  <h2>Why offline</h2>
+  <p class="body">Smart home kit has a habit of getting worse over time. The app changes,
+  the service gets acquired, the thing you bought stops working because a server three
+  thousand miles away was switched off. Every tool here is a file that runs on your
+  machine and keeps running whether or not I'm still around. That's the whole idea.</p>
+
+  <footer>
+    Nightjar Tools ·
+    <a class="plain" href="https://github.com/NightjarTools">GitHub</a> ·
+    <a class="plain" href="https://blakesivon.gumroad.com">Store</a>
+  </footer>
+
+</div>
+</body>
+</html>
