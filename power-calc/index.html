@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homelab Running-Cost Calculator — what a home server actually costs to run</title>
+<meta name="description" content="Work out what your home server costs in electricity per year, and how long it takes to pay for itself against the cloud equivalent. Free, no signup, share your result with a link.">
+<link rel="canonical" href="https://example.com/homelab-power-calculator/">
+<meta property="og:title" content="Homelab Running-Cost Calculator">
+<meta property="og:description" content="What does a home server actually cost to run? Enter your hardware and your electricity rate.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#0f1216;--panel:#171b21;--panel2:#1d232b;--line:#2a323d;
+    --ink:#e9eef4;--dim:#8f9bab;--accent:#4b8bf5;--ok:#39c07f;--warn:#f0a83c;--bad:#e2604b;
+    --maxw:1100px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  header{padding:38px 0 26px;border-bottom:1px solid var(--line)}
+  h1{margin:0 0 8px;font-size:30px;letter-spacing:-.02em;line-height:1.2}
+  .lede{margin:0;color:var(--dim);max-width:62ch}
+  main{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,420px);
+       gap:26px;padding:26px 0 40px;align-items:start}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  fieldset{border:1px solid var(--line);border-radius:14px;padding:16px 16px 8px;
+           margin:0 0 18px;background:var(--panel)}
+  legend{padding:0 8px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+         color:var(--dim);font-weight:600}
+  label{display:block;margin:0 0 13px;font-size:13px;color:var(--dim)}
+  label .l{display:block;margin-bottom:5px}
+  input,select{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+               background:var(--panel2);color:var(--ink);font:inherit;font-size:15px}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:9px;align-items:end;
+        margin-bottom:9px}
+  button{font:inherit;font-size:14px;padding:9px 14px;border-radius:9px;
+         border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.x{padding:9px 11px;color:var(--dim)}
+  button.x:hover{border-color:var(--bad);color:var(--bad)}
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:6px}
+  .hint{font-size:12.5px;color:var(--dim);margin:-4px 0 12px}
+  /* results */
+  .results{position:sticky;top:18px}
+  .headline{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+            padding:20px;margin-bottom:14px}
+  .big{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:2px 0 2px}
+  .big small{font-size:17px;font-weight:600;color:var(--dim);letter-spacing:0}
+  .cap{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+       font-weight:600}
+  .sub{font-size:13.5px;color:var(--dim);margin-top:6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .cell{background:var(--panel2);border-radius:11px;padding:11px 13px}
+  .cell b{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+          color:var(--dim);font-weight:600;margin-bottom:3px}
+  .cell span{font-size:19px;font-weight:650;letter-spacing:-.02em}
+  .verdict{border-radius:14px;padding:15px 17px;margin-bottom:14px;font-size:14.5px;
+           border:1px solid var(--line);background:var(--panel)}
+  .verdict.win{border-color:var(--ok)} .verdict.lose{border-color:var(--warn)}
+  .verdict b{display:block;margin-bottom:5px;font-size:15px}
+  /* chart */
+  .chart{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+         padding:16px;margin-bottom:14px}
+  .bars{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+  .bar{display:grid;grid-template-columns:76px 1fr auto;gap:10px;align-items:center;
+       font-size:13px}
+  .bar .track{height:22px;background:var(--panel2);border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--accent);border-radius:6px}
+  .bar .fill.cloud{background:var(--warn)}
+  .bar .v{font-variant-numeric:tabular-nums;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .caveat{font-size:12.5px;color:var(--dim);background:var(--panel2);
+          border-left:3px solid var(--warn);padding:11px 13px;border-radius:0 9px 9px 0;
+          margin:14px 0}
+  article{border-top:1px solid var(--line);padding:30px 0}
+  article h2{font-size:22px;letter-spacing:-.01em;margin:0 0 10px}
+  article h3{font-size:17px;margin:24px 0 6px}
+  article p,article li{color:#c3ccd7;max-width:70ch}
+  footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--dim);font-size:13px}
+  a{color:var(--accent)}
+  .shareout{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <h1>What does a home server actually cost to run?</h1>
+  <p class="lede">Enter your hardware and your electricity rate. You'll get the
+    annual running cost, the total cost of ownership over five years, and how
+    that compares against paying someone else to run it. No signup, nothing
+    stored, and you can share your result with a link.</p>
+</header>
+
+<main>
+  <!-- ============ inputs ============ -->
+  <div>
+    <fieldset>
+      <legend>1 · Your hardware</legend>
+      <div id="devices"></div>
+      <div class="btnrow">
+        <button type="button" onclick="addDevice()">Add device</button>
+        <select id="preset" onchange="addPreset()" style="width:auto;min-width:210px">
+          <option value="">Add a common device…</option>
+        </select>
+      </div>
+      <p class="hint">Idle watts matter far more than peak. A homelab spends
+        almost all its life idle, which is why a machine with a great peak
+        efficiency figure can still cost you the most.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>2 · Electricity</legend>
+      <div class="row">
+        <label><span class="l">Your rate</span>
+          <input type="number" id="rate" value="0.28" step="0.01" min="0"></label>
+        <label><span class="l">Currency</span>
+          <select id="currency">
+            <option value="$">$ per kWh</option>
+            <option value="£">£ per kWh</option>
+            <option value="€">€ per kWh</option>
+            <option value="A$">A$ per kWh</option>
+            <option value="C$">C$ per kWh</option>
+          </select></label>
+      </div>
+      <label><span class="l">Start from a rough regional figure</span>
+        <select id="region" onchange="applyRegion()">
+          <option value="">Pick one, then correct it from your bill…</option>
+        </select></label>
+      <p class="hint" id="ratehint">Look at your last bill and use the number
+        including standing charges and tax. Regional figures below are rough
+        starting points from 2026 and will be wrong for you specifically.</p>
+      <label><span class="l">Grid carbon intensity (g CO₂ per kWh) — optional</span>
+        <input type="number" id="carbon" value="0" step="10" min="0"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>3 · What you'd pay instead</legend>
+      <p class="hint">The honest comparison is against what you would actually
+        rent, not a theoretical equivalent. Look up today's price for the VPS or
+        instance you'd really use, and put it here.</p>
+      <div class="row">
+        <label><span class="l">Cloud alternative, per month</span>
+          <input type="number" id="cloud" value="0" step="1" min="0"></label>
+        <label><span class="l">What is it?</span>
+          <input type="text" id="cloudname" placeholder="e.g. 4 vCPU / 8 GB VPS"></label>
+      </div>
+      <p class="hint">Leave at 0 to skip the comparison and just see running
+        costs.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>4 · Assumptions</legend>
+      <div class="row">
+        <label><span class="l">Years to model</span>
+          <input type="number" id="years" value="5" min="1" max="15"></label>
+        <label><span class="l">Electricity price rise, % per year</span>
+          <input type="number" id="inflation" value="3" step="0.5"></label>
+      </div>
+      <p class="hint">Setting the rise to 0 gives you today's prices held flat.
+        It makes the home server look better and the cloud look better by
+        roughly the same amount, so it rarely changes the answer.</p>
+    </fieldset>
+
+    <div class="btnrow">
+      <button class="primary" type="button" onclick="share()">Copy shareable link</button>
+      <button type="button" onclick="loadExample()">Load an example</button>
+      <button type="button" onclick="reset()">Reset</button>
+    </div>
+    <input class="shareout" id="shareout" readonly placeholder="Your link will appear here">
+  </div>
+
+  <!-- ============ results ============ -->
+  <div class="results">
+    <div class="headline">
+      <div class="cap">Electricity, per year</div>
+      <div class="big" id="r-year">—</div>
+      <div class="sub" id="r-sub">Add a device to see the numbers.</div>
+      <div class="grid2">
+        <div class="cell"><b>Average draw</b><span id="r-watts">—</span></div>
+        <div class="cell"><b>Per year</b><span id="r-kwh">—</span></div>
+        <div class="cell"><b>Per month</b><span id="r-month">—</span></div>
+        <div class="cell"><b>Per day</b><span id="r-day">—</span></div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict" style="display:none"></div>
+
+    <div class="chart" id="chart" style="display:none">
+      <div class="cap">Cumulative cost</div>
+      <div class="bars" id="bars"></div>
+      <table id="tbl"></table>
+    </div>
+
+    <div class="caveat">
+      <b>What this does not include:</b> the hardware you already own, drives you
+      were going to buy anyway, your own time, or the cost of the outage you'd
+      have had either way. It also can't know your idle draw for certain —
+      measure it with a plug meter if the answer is close.
+    </div>
+
+    <div class="chart" id="carbonbox" style="display:none">
+      <div class="cap">Carbon</div>
+      <div class="big" id="r-carbon" style="font-size:26px">—</div>
+      <div class="sub">per year, at the grid intensity you entered</div>
+    </div>
+  </div>
+</main>
+
+<article>
+  <h2>Is a home server worth it?</h2>
+  <p>The honest answer is that it depends almost entirely on two numbers: what
+    you pay per kilowatt-hour, and how many watts the machine draws while doing
+    nothing. Everything else is noise.</p>
+
+  <h3>Idle draw is the whole game</h3>
+  <p>A homelab is idle roughly 95% of the time. A machine that idles at 15 W
+    costs about a fifth of one that idles at 75 W, regardless of how fast either
+    one is when you actually use it. This is why a small modern mini PC often
+    beats a free second-hand enterprise server: the server costs nothing to
+    acquire and hundreds a year to leave switched on.</p>
+
+  <h3>The rate you pay matters more than the hardware you buy</h3>
+  <p>The same machine can cost three times as much to run in one country as
+    another. Anyone telling you a home server is or isn't worth it without
+    asking your rate is describing their own electricity bill, not yours.</p>
+
+  <h3>Where self-hosting genuinely wins</h3>
+  <ul>
+    <li><b>Storage.</b> Bulk storage is where cloud pricing is least forgiving,
+      and where owning drives pays back quickest.</li>
+    <li><b>Things that run constantly and cheaply.</b> Home Assistant, a DNS
+      filter, a reverse proxy — a few watts, replacing several subscriptions.</li>
+    <li><b>Anything where you'd otherwise pay per seat or per gigabyte.</b></li>
+  </ul>
+
+  <h3>Where it usually doesn't</h3>
+  <ul>
+    <li><b>Anything that must not go down.</b> You are the on-call rota.</li>
+    <li><b>Bursty compute.</b> Paying for idle capacity 24/7 to use it two hours
+      a month is exactly what renting is for.</li>
+    <li><b>When your electricity is expensive and the hardware is old.</b> A free
+      server at a high rate is not free.</li>
+  </ul>
+
+  <h3>Measure, don't estimate</h3>
+  <p>The device figures in this calculator are reasonable typical values, but
+    your actual draw depends on your drives, your fans, your PSU's efficiency at
+    low load, and what you're running. A plug-in energy meter costs less than a
+    month of being wrong, and turns this calculator from an estimate into an
+    answer.</p>
+</article>
+
+<footer>
+  <p>Runs entirely in your browser. Nothing you type is sent anywhere — the
+    shareable link encodes your inputs in the URL itself.</p>
+  <p id="stamp"></p>
+</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ data
+ * Typical idle/load figures. These are starting points, not measurements —
+ * the page says so, repeatedly, because a calculator that pretends to
+ * precision it doesn't have is worse than no calculator.
+ */
+var PRESETS = [
+  ["Raspberry Pi 4 (4 GB)",              3,   7],
+  ["Raspberry Pi 5 (8 GB)",              4,  12],
+  ["Mini PC, Intel N100",                7,  25],
+  ["Mini PC, Intel N305 / N355",        10,  35],
+  ["Mini PC, i5 (recent, low-power)",   12,  55],
+  ["NUC-class i7",                      15,  75],
+  ["Custom NAS, 4 bay, low-power CPU",  35,  75],
+  ["Custom NAS, 8 bay",                 60, 130],
+  ["Synology 4-bay (populated)",        30,  55],
+  ["Synology 8-bay (populated)",        55, 100],
+  ["Used Dell R720 / HP DL380 G8",     110, 250],
+  ["Used Dell R620 (1U)",               75, 180],
+  ["Desktop tower repurposed as server", 55, 160],
+  ["Old laptop as a server",            10,  35],
+  ["3.5\" HDD, spinning (each)",         5,   9],
+  ["2.5\" SSD / NVMe (each)",            1,   4],
+  ["Managed switch, 8-port PoE",        12,  60],
+  ["Unmanaged switch, 5-port",           2,   4],
+  ["UPS (standby losses)",               8,  12],
+  ["GPU, idle-heavy (e.g. transcode)",  15, 180]
+];
+
+/* Rough residential all-in rates, 2026, local currency per kWh. Deliberately
+ * coarse — the UI tells the user to correct them from their own bill. */
+var REGIONS = [
+  ["United Kingdom",        0.27, "£"],
+  ["Ireland",               0.33, "€"],
+  ["Germany",               0.35, "€"],
+  ["Netherlands",           0.31, "€"],
+  ["France",                0.25, "€"],
+  ["Spain",                 0.23, "€"],
+  ["Italy",                 0.32, "€"],
+  ["Denmark",               0.36, "€"],
+  ["Poland",                0.22, "€"],
+  ["USA — national average",0.17, "$"],
+  ["USA — California",      0.31, "$"],
+  ["USA — Texas",           0.15, "$"],
+  ["USA — New York",        0.24, "$"],
+  ["Canada",                0.14, "C$"],
+  ["Australia",             0.33, "A$"],
+  ["New Zealand",           0.30, "$"]
+];
+
+var HOURS_YEAR = 8760;
+var rows = [];
+var nextId = 1;
+
+function el(id){ return document.getElementById(id); }
+function num(id){ var v = parseFloat(el(id).value); return isFinite(v) ? v : 0; }
+
+/* ------------------------------------------------------------- device rows */
+function addDevice(name, idle, load, duty, qty){
+  var id = nextId++;
+  rows.push(id);
+  var host = document.createElement("div");
+  host.className = "row3";
+  host.id = "dev" + id;
+  host.innerHTML =
+    '<label style="margin:0"><span class="l">Device</span>' +
+      '<input type="text" id="n' + id + '" value="' + esc(name || "") +
+      '" placeholder="what is it"></label>' +
+    '<label style="margin:0"><span class="l">Idle W</span>' +
+      '<input type="number" id="i' + id + '" min="0" step="1" value="' + (idle || 0) + '"></label>' +
+    '<label style="margin:0"><span class="l">Load W</span>' +
+      '<input type="number" id="w' + id + '" min="0" step="1" value="' + (load || 0) + '"></label>' +
+    '<button class="x" type="button" onclick="delDevice(' + id + ')" title="remove">&times;</button>';
+  el("devices").appendChild(host);
+
+  var extra = document.createElement("div");
+  extra.className = "row";
+  extra.id = "devx" + id;
+  extra.innerHTML =
+    '<label><span class="l">Quantity</span>' +
+      '<input type="number" id="q' + id + '" min="1" step="1" value="' + (qty || 1) + '"></label>' +
+    '<label><span class="l">% of time under load</span>' +
+      '<input type="number" id="d' + id + '" min="0" max="100" step="1" value="' +
+      (duty === undefined ? 5 : duty) + '"></label>';
+  el("devices").appendChild(extra);
+
+  ["n","i","w","q","d"].forEach(function(p){
+    el(p + id).addEventListener("input", calc);
+  });
+  calc();
+}
+
+function delDevice(id){
+  rows = rows.filter(function(r){ return r !== id; });
+  var a = el("dev" + id), b = el("devx" + id);
+  if (a) a.remove();
+  if (b) b.remove();
+  calc();
+}
+
+function addPreset(){
+  var i = el("preset").value;
+  if (i === "") return;
+  var p = PRESETS[parseInt(i, 10)];
+  addDevice(p[0], p[1], p[2], 5, 1);
+  el("preset").value = "";
+}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                  .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ------------------------------------------------------------------ maths */
+function averageWatts(){
+  var total = 0;
+  rows.forEach(function(id){
+    var idle = parseFloat(el("i" + id).value) || 0;
+    var load = parseFloat(el("w" + id).value) || 0;
+    var qty  = parseFloat(el("q" + id).value) || 1;
+    var duty = Math.min(100, Math.max(0, parseFloat(el("d" + id).value) || 0)) / 100;
+    total += qty * (idle * (1 - duty) + load * duty);
+  });
+  return total;
+}
+
+function money(v){
+  var c = el("currency").value;
+  var n = Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(2);
+  return c + Number(n).toLocaleString(undefined,
+    { minimumFractionDigits: Math.abs(v) >= 1000 ? 0 : 2,
+      maximumFractionDigits: Math.abs(v) >= 1000 ? 0 : 2 });
+}
+
+function calc(){
+  var w = averageWatts();
+  var kwhYear = w * HOURS_YEAR / 1000;
+  var rate = num("rate");
+  var yearCost = kwhYear * rate;
+
+  el("r-year").innerHTML = rows.length
+    ? money(yearCost) + ' <small>/ year</small>' : "—";
+  el("r-watts").textContent = rows.length ? w.toFixed(1) + " W" : "—";
+  el("r-kwh").textContent   = rows.length ? kwhYear.toFixed(0) + " kWh" : "—";
+  el("r-month").textContent = rows.length ? money(yearCost / 12) : "—";
+  el("r-day").textContent   = rows.length ? money(yearCost / 365) : "—";
+  el("r-sub").textContent = rows.length
+    ? (rows.length + (rows.length === 1 ? " device" : " devices") +
+       ", running 24/7 at " + el("currency").value + rate.toFixed(2) + "/kWh")
+    : "Add a device to see the numbers.";
+
+  /* carbon */
+  var g = num("carbon");
+  if (g > 0 && rows.length){
+    el("carbonbox").style.display = "";
+    var kg = kwhYear * g / 1000;
+    el("r-carbon").textContent = kg >= 1000
+      ? (kg / 1000).toFixed(2) + " tonnes CO₂"
+      : kg.toFixed(0) + " kg CO₂";
+  } else {
+    el("carbonbox").style.display = "none";
+  }
+
+  projection(yearCost);
+}
+
+function projection(yearCostNow){
+  var cloudMonth = num("cloud");
+  var years = Math.max(1, Math.min(15, Math.round(num("years")) || 5));
+  var infl = num("inflation") / 100;
+
+  if (!rows.length || cloudMonth <= 0){
+    el("chart").style.display = "none";
+    el("verdict").style.display = "none";
+    return;
+  }
+
+  var homeCum = 0, cloudCum = 0, series = [], breakeven = null;
+  for (var y = 1; y <= years; y++){
+    var f = Math.pow(1 + infl, y - 1);
+    homeCum  += yearCostNow * f;
+    cloudCum += cloudMonth * 12 * f;
+    series.push({ y: y, home: homeCum, cloud: cloudCum });
+    if (breakeven === null && homeCum > cloudCum) breakeven = y;
+  }
+
+  /* chart */
+  var max = Math.max(series[series.length - 1].home, series[series.length - 1].cloud) || 1;
+  var bars = "";
+  series.forEach(function(s){
+    bars +=
+      '<div class="bar"><span>Year ' + s.y + ' · self</span>' +
+      '<span class="track"><span class="fill" style="width:' +
+        (s.home / max * 100).toFixed(1) + '%"></span></span>' +
+      '<span class="v">' + money(s.home) + '</span></div>' +
+      '<div class="bar"><span>Year ' + s.y + ' · rent</span>' +
+      '<span class="track"><span class="fill cloud" style="width:' +
+        (s.cloud / max * 100).toFixed(1) + '%"></span></span>' +
+      '<span class="v">' + money(s.cloud) + '</span></div>';
+  });
+  el("bars").innerHTML = bars;
+
+  var tbl = '<tr><th>Year</th><th class="n">Run it yourself</th>' +
+            '<th class="n">Rent it</th><th class="n">Difference</th></tr>';
+  series.forEach(function(s){
+    var d = s.cloud - s.home;
+    tbl += '<tr><td>' + s.y + '</td><td class="n">' + money(s.home) +
+           '</td><td class="n">' + money(s.cloud) + '</td><td class="n" style="color:' +
+           (d >= 0 ? "var(--ok)" : "var(--warn)") + '">' +
+           (d >= 0 ? "+" : "−") + money(Math.abs(d)) + '</td></tr>';
+  });
+  el("tbl").innerHTML = tbl;
+  el("chart").style.display = "";
+
+  /* verdict */
+  var last = series[series.length - 1];
+  var diff = last.cloud - last.home;
+  var name = el("cloudname").value.trim() || "the cloud alternative";
+  var v = el("verdict");
+  v.style.display = "";
+  if (diff > 0){
+    v.className = "verdict win";
+    v.innerHTML = "<b>Running it yourself is cheaper here.</b>" +
+      "Over " + years + " years you'd spend " + money(last.home) +
+      " in electricity against " + money(last.cloud) + " renting " + esc(name) +
+      " — a difference of " + money(diff) + ". That's the electricity only; " +
+      "subtract whatever the hardware cost you.";
+  } else {
+    v.className = "verdict lose";
+    v.innerHTML = "<b>Renting is cheaper here.</b>" +
+      "Over " + years + " years the electricity alone comes to " + money(last.home) +
+      ", against " + money(last.cloud) + " for " + esc(name) +
+      ". At your rate, this hardware costs more to power than to rent — " +
+      "before you've bought anything or fixed anything.";
+  }
+  if (breakeven){
+    v.innerHTML += "<br><br>Electricity overtakes the rental cost in year " +
+      breakeven + ".";
+  }
+}
+
+/* ------------------------------------------------------------------ share */
+function state(){
+  return {
+    d: rows.map(function(id){
+      return [el("n" + id).value, num("i" + id), num("w" + id),
+              num("q" + id), num("d" + id)];
+    }),
+    r: num("rate"), c: el("currency").value, cl: num("cloud"),
+    cn: el("cloudname").value, y: num("years"), f: num("inflation"),
+    g: num("carbon")
+  };
+}
+
+function share(){
+  var url = location.origin + location.pathname + "#" +
+            encodeURIComponent(JSON.stringify(state()));
+  el("shareout").value = url;
+  el("shareout").select();
+  try { document.execCommand("copy"); } catch (e) { /* user can copy manually */ }
+  history.replaceState(null, "", "#" + encodeURIComponent(JSON.stringify(state())));
+}
+
+function restore(){
+  if (!location.hash || location.hash.length < 3) return false;
+  var s;
+  try { s = JSON.parse(decodeURIComponent(location.hash.slice(1))); }
+  catch (e) { return false; }
+  if (!s || !Array.isArray(s.d)) return false;
+
+  el("devices").innerHTML = ""; rows = [];
+  s.d.forEach(function(d){ addDevice(d[0], d[1], d[2], d[4], d[3]); });
+  if (s.r) el("rate").value = s.r;
+  if (s.c) el("currency").value = s.c;
+  if (s.cl !== undefined) el("cloud").value = s.cl;
+  if (s.cn) el("cloudname").value = s.cn;
+  if (s.y) el("years").value = s.y;
+  if (s.f !== undefined) el("inflation").value = s.f;
+  if (s.g !== undefined) el("carbon").value = s.g;
+  calc();
+  return true;
+}
+
+function applyRegion(){
+  var i = el("region").value;
+  if (i === "") return;
+  var r = REGIONS[parseInt(i, 10)];
+  el("rate").value = r[1];
+  el("currency").value = r[2];
+  calc();
+}
+
+function loadExample(){
+  el("devices").innerHTML = ""; rows = [];
+  addDevice("Mini PC, Intel N100", 7, 25, 8, 1);
+  addDevice("3.5\" HDD, spinning", 5, 9, 15, 4);
+  addDevice("Unmanaged switch", 2, 4, 0, 1);
+  el("rate").value = 0.28;
+  el("cloud").value = 24;
+  el("cloudname").value = "4 vCPU / 8 GB VPS + 4 TB storage";
+  el("years").value = 5;
+  calc();
+}
+
+function reset(){
+  el("devices").innerHTML = ""; rows = [];
+  history.replaceState(null, "", location.pathname);
+  addDevice("", 0, 0, 5, 1);
+  calc();
+}
+
+/* ------------------------------------------------------------------- boot */
+(function init(){
+  var p = el("preset");
+  PRESETS.forEach(function(d, i){
+    var o = document.createElement("option");
+    o.value = i;
+    o.textContent = d[0] + "  (" + d[1] + "–" + d[2] + " W)";
+    p.appendChild(o);
+  });
+  var rg = el("region");
+  REGIONS.forEach(function(r, i){
+    var o = document.createElement("option");
+    o.value = i;
+    o.textContent = r[0] + "  ~" + r[2] + r[1].toFixed(2);
+    rg.appendChild(o);
+  });
+  ["rate","currency","cloud","cloudname","years","inflation","carbon"]
+    .forEach(function(id){ el(id).addEventListener("input", calc); });
+  el("currency").addEventListener("change", calc);
+
+  el("stamp").textContent =
+    "Device wattages and regional electricity rates last reviewed August 2026. " +
+    "Both drift — correct them from your own bill and your own meter.";
+
+  if (!restore()) loadExample();
+})();
+</script>
+</body>
+</html>
