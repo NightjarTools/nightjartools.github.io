@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zigbee / Wi-Fi / Thread Channel Planner (free version)</title>
+<style>
+:root{
+ --bg:#0f1319; --panel:#161c25; --panel2:#1c2430; --line:#2a3442;
+ --ink:#e8edf3; --mute:#93a1b3; --accent:#4da3ff;
+ --good:#3ecf8e; --warn:#f0b429; --bad:#ff6b6b; --wifi:#4da3ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{padding:26px 22px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{margin:0;font-size:23px;font-weight:600;letter-spacing:-.2px}
+header p{margin:6px 0 0;color:var(--mute);font-size:14px;max-width:66ch}
+.wrap{max-width:1060px;margin:0 auto;padding:22px}
+.cols{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+@media(max-width:880px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px}
+.panel h2{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--mute);font-weight:600}
+.panel .hint{color:var(--mute);font-size:12.5px;margin:0 0 14px}
+label{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 5px}
+select,input[type=text],input[type=number]{width:100%;background:var(--panel2);color:var(--ink);
+ border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px}
+button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+ padding:8px 13px;font:inherit;font-size:13.5px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#04121f;font-weight:600}
+button.link{background:none;border:none;color:var(--accent);padding:2px 4px;font-size:13px}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.row select,.row input{width:auto;flex:1;min-width:0}
+.row .x{flex:none;width:30px;padding:6px 0;text-align:center;color:var(--mute)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.presets button{font-size:12px;padding:5px 9px}
+.chk{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13.5px;color:var(--ink)}
+.chk input{width:auto}
+
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
+.big{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.big .k{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute)}
+.big .v{font-size:30px;font-weight:650;line-height:1.15;margin-top:2px}
+.big .s{font-size:12.5px;color:var(--mute);margin-top:3px}
+.big.good{border-color:rgba(62,207,142,.5)} .big.good .v{color:var(--good)}
+.big.warn{border-color:rgba(240,180,41,.5)} .big.warn .v{color:var(--warn)}
+.big.bad{border-color:rgba(255,107,107,.5)} .big.bad .v{color:var(--bad)}
+
+svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:10px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;
+ color:var(--mute);font-weight:600;padding:0 10px 8px}
+td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top}
+tr.top td{background:rgba(77,163,255,.07)}
+.bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%}
+.sc{font-variant-numeric:tabular-nums;font-weight:600;width:38px;display:inline-block}
+.note{display:block;font-size:12.5px;color:var(--mute);margin-top:3px}
+.note.bad{color:var(--bad)} .note.warn{color:var(--warn)} .note.good{color:var(--good)}
+.chan{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+.freq{font-size:11.5px;color:var(--mute)}
+
+details{border-top:1px solid var(--line);padding:12px 0 0;margin-top:14px}
+summary{cursor:pointer;font-size:13.5px;color:var(--accent)}
+details .body{padding-top:10px;font-size:13.5px;color:var(--ink)}
+details code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12.5px}
+ol,ul{padding-left:20px;margin:8px 0}
+li{margin:4px 0}
+footer{color:var(--mute);font-size:12.5px;padding:8px 22px 40px;max-width:1060px;margin:0 auto}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+@media print{
+ :root{--bg:#fff;--panel:#fff;--panel2:#fff;--line:#ccc;--ink:#111;--mute:#555}
+ body{font-size:12pt}
+ .noprint{display:none!important}
+ .cols{grid-template-columns:1fr}
+ .panel{break-inside:avoid;border:1px solid #ccc}
+ details{display:block} details .body{display:block!important}
+ header{border-bottom:2px solid #111}
+ a[href]:after{content:""}
+}
+</style>
+
+<header>
+  <h1>Zigbee / Wi-Fi / Thread Channel Planner</h1>
+  <p>Zigbee, Thread and Wi-Fi all share the 2.4&nbsp;GHz band, and Wi-Fi is
+     roughly a thousand times louder. Tell it which Wi-Fi channels are in the
+     air around you and it works out where your mesh should sit.
+     Runs entirely offline &mdash; nothing is sent anywhere.
+     <br><b>Free version.</b> The full version adds the reason behind every
+     channel's score, the step-by-step change guide for ZHA, Zigbee2MQTT,
+     deCONZ and Thread, and a printable plan.</p>
+</header>
+
+<div class="wrap">
+<div class="cols">
+
+  <!-- ------------------------------------------------ inputs -->
+  <div class="noprint">
+    <div class="panel">
+      <h2>Your region</h2>
+      <p class="hint">Sets which Wi-Fi channels are legal where you live.</p>
+      <select id="region"></select>
+      <div id="regionNote" class="hint" style="margin:8px 0 0"></div>
+
+      <label style="margin-top:16px">What are you running?</label>
+      <div class="chk"><input type="checkbox" id="useZigbee" checked><span>Zigbee (ZHA, Zigbee2MQTT, deCONZ)</span></div>
+      <div class="chk"><input type="checkbox" id="useThread"><span>Thread / Matter (border router)</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Wi-Fi in the air</h2>
+      <p class="hint">Yours and your neighbours'. Any Wi-Fi analyser app will
+        list them &mdash; you only need the channel. If you don't know the
+        signal strength, leave it on medium.</p>
+
+      <div class="presets">
+        <button data-preset="us">US: 1, 6, 11</button>
+        <button data-preset="eu">EU: 1, 5, 9, 13</button>
+        <button data-preset="one">Just my router</button>
+        <button data-preset="busy">Crowded flat</button>
+        <button data-preset="clear">Clear (5&nbsp;GHz only)</button>
+      </div>
+
+      <div id="nets"></div>
+      <button id="add" style="margin-top:6px">+ Add a network</button>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------ results -->
+  <div>
+    <div class="panel">
+      <h2>The plan</h2>
+      <div class="verdict" id="verdict"></div>
+      <div id="planNote" class="hint" style="margin:12px 0 0"></div>
+      <div class="actions noprint">
+        <button class="primary" onclick="window.print()">Print this plan</button>
+        <button id="copyBtn">Copy as text</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>The 2.4 GHz band</h2>
+      <p class="hint">Blue blocks are Wi-Fi. The ticks below are the sixteen
+        802.15.4 channels Zigbee and Thread can use.</p>
+      <div id="chart"></div>
+      <div class="legend">
+        <span><i style="background:var(--wifi);opacity:.55"></i>Wi-Fi</span>
+        <span><i style="background:var(--good)"></i>Clear</span>
+        <span><i style="background:var(--warn)"></i>Compromised</span>
+        <span><i style="background:var(--bad)"></i>Avoid</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>In the full version</h2>
+      <p class="hint">This free version gives you the recommendation and the
+        spectrum picture, which is the part most people need. The paid version
+        adds the bits you want when the answer is not clean:</p>
+      <ul style="font-size:13.5px">
+        <li>Every one of the sixteen channels scored, each with the reason
+          &mdash; which Wi-Fi network it collides with, whether it lands on a
+          Bluetooth advertising channel, whether it is in the microwave band.</li>
+        <li>Step-by-step instructions for changing channel in ZHA,
+          Zigbee2MQTT, deCONZ and Thread, including what will need re-pairing.</li>
+        <li>A separate Thread channel chosen so it does not fight your Zigbee mesh.</li>
+        <li>A printable one-page plan, and copy-as-text.</li>
+        <li>What to do instead when no channel scores well &mdash; which is the
+          real answer in a block of flats.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer>
+  Frequencies from the IEEE 802.15.4 and 802.11 channel plans. Scoring is a
+  planning model, not a measurement &mdash; it cannot see the baby monitor in
+  the next room. Verify with your coordinator's own link-quality figures after
+  you move.
+</footer>
+
+<script id="rf-core">
+/* ------------------------------------------------------------------ *
+ * RF core - the physics. Deterministic, no DOM, unit tested.
+ *
+ * All frequencies in MHz.
+ * ------------------------------------------------------------------ */
+const RF = (() => {
+
+  // --- 802.11b/g/n 2.4 GHz --------------------------------------------
+  // Centre = 2407 + 5n for n = 1..13. Channel 14 is a Japan-only special
+  // case at 2484 and is 12 MHz above 13, not 5.
+  function wifiCentre(ch) {
+    if (ch === 14) return 2484;
+    if (ch >= 1 && ch <= 13) return 2407 + 5 * ch;
+    return null;
+  }
+
+  // A 20 MHz 802.11 carrier is specified with a 22 MHz spectral mask, so
+  // the occupied band is centre +/- 11. HT40 doubles it and sits above or
+  // below the control channel.
+  function wifiBand(ch, width, secondary) {
+    const c = wifiCentre(ch);
+    if (c === null) return null;
+    if (width === 40) {
+      // The 40 MHz block is the control channel plus the adjacent 20 MHz.
+      return secondary === "below"
+        ? { lo: c - 11 - 20, hi: c + 11 }
+        : { lo: c - 11, hi: c + 11 + 20 };
+    }
+    return { lo: c - 11, hi: c + 11 };
+  }
+
+  // --- 802.15.4 2.4 GHz (Zigbee and Thread share the channel plan) -----
+  // Centre = 2405 + 5(ch - 11) for ch 11..26. 2 MHz nominal bandwidth;
+  // ~3 MHz is the practical occupied width once the mask is included.
+  function ieee802154Centre(ch) {
+    if (ch < 11 || ch > 26) return null;
+    return 2405 + 5 * (ch - 11);
+  }
+  function ieee802154Band(ch) {
+    const c = ieee802154Centre(ch);
+    return c === null ? null : { lo: c - 1.5, hi: c + 1.5 };
+  }
+
+  const ZIGBEE_CHANNELS = Array.from({ length: 16 }, (_, i) => i + 11);
+
+  // Bluetooth LE advertises on three fixed channels. Everything with a
+  // battery in your house is shouting on these.
+  const BLE_ADVERTISING = [
+    { ch: 37, freq: 2402 },
+    { ch: 38, freq: 2426 },
+    { ch: 39, freq: 2480 },
+  ];
+
+  // Domestic microwave ovens are specified at 2450 MHz and leak over
+  // roughly this span. This is the interference nobody plans around and
+  // then blames on their light bulbs.
+  const MICROWAVE = { lo: 2445, hi: 2465, peak: 2455 };
+
+  const REGIONS = {
+    us: { name: "US / North America (FCC)", wifi: range(1, 11),
+          nonOverlap: [1, 6, 11], note: "Channels 12 and 13 are not available." },
+    eu: { name: "Europe / UK (ETSI)", wifi: range(1, 13),
+          nonOverlap: [1, 5, 9, 13],
+          note: "13 channels means four non-overlapping options, not three." },
+    jp: { name: "Japan", wifi: range(1, 14),
+          nonOverlap: [1, 5, 9, 13],
+          note: "Channel 14 is 802.11b only and rarely worth using." },
+    au: { name: "Australia / New Zealand", wifi: range(1, 13),
+          nonOverlap: [1, 5, 9, 13], note: "" },
+  };
+  function range(a, b) { const o = []; for (let i = a; i <= b; i++) o.push(i); return o; }
+
+  // --- overlap ---------------------------------------------------------
+  function overlapWidth(a, b) {
+    return Math.max(0, Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo));
+  }
+
+  /**
+   * How badly one Wi-Fi carrier hurts one 802.15.4 channel, 0..1.
+   *
+   * Inside the mask it is a direct hit. Outside it, transmit power does not
+   * stop at the mask edge - it rolls off - so there is a skirt either side
+   * that still matters. Modelled as linear decay over 12 MHz, which is a
+   * fair approximation of a real 802.11 spectral mask for planning
+   * purposes and errs toward caution.
+   */
+  const SKIRT_MHZ = 12;
+  const IN_BAND_COST = 70;   // sitting inside a Wi-Fi carrier
+  const SKIRT_COST = 9;      // sitting just outside one
+
+  /** Fraction of the 802.15.4 channel that falls inside the Wi-Fi mask. */
+  function collisionFactor(zBand, wBand) {
+    const inMask = overlapWidth(zBand, wBand);
+    const zWidth = zBand.hi - zBand.lo;
+    if (inMask > 0) return Math.min(1, inMask / zWidth);
+    return 0;
+  }
+
+  /** How far outside the mask, as 0..1 where 1 is touching the edge. */
+  function skirtFactor(zBand, wBand) {
+    if (overlapWidth(zBand, wBand) > 0) return 0;
+    const gap = zBand.lo > wBand.hi ? zBand.lo - wBand.hi : wBand.lo - zBand.hi;
+    if (gap >= SKIRT_MHZ) return 0;
+    return 1 - gap / SKIRT_MHZ;
+  }
+
+  /** Combined cost of one Wi-Fi carrier against one 802.15.4 channel. */
+  function wifiCost(zBand, wBand) {
+    const f = collisionFactor(zBand, wBand);
+    if (f > 0) return IN_BAND_COST * f;
+    return SKIRT_COST * skirtFactor(zBand, wBand);
+  }
+
+  /**
+   * Score one 802.15.4 channel against everything else in the band.
+   * Returns 0..100 where higher is better, plus the reasons why.
+   */
+  function scoreChannel(ch, opts) {
+    opts = opts || {};
+    const networks = opts.wifiNetworks || [];
+    const zBand = ieee802154Band(ch);
+    const notes = [];
+    let penalty = 0;
+
+    // --- Wi-Fi -----------------------------------------------------------
+    let worst = 0, worstNet = null;
+    networks.forEach((n) => {
+      const wBand = wifiBand(n.channel, n.width || 20, n.secondary);
+      if (!wBand) return;
+      const cost = wifiCost(zBand, wBand);
+      if (cost <= 0) return;
+      // A strong AP hurts more than a distant one. Default weight 1 covers
+      // "I don't know the signal strength", which is most people.
+      const weight = n.weight === undefined ? 1 : n.weight;
+      penalty += cost * weight;
+      if (cost * weight > worst) { worst = cost * weight; worstNet = n; }
+    });
+    if (worstNet) {
+      const f = collisionFactor(zBand, wifiBand(worstNet.channel, worstNet.width || 20, worstNet.secondary));
+      notes.push({
+        severity: f > 0.5 ? "bad" : "warn",
+        text: f > 0.5
+          ? `Sits inside Wi-Fi channel ${worstNet.channel}${worstNet.label ? " (" + worstNet.label + ")" : ""}.`
+          : `Close to Wi-Fi channel ${worstNet.channel}${worstNet.label ? " (" + worstNet.label + ")" : ""} - some spillover.`,
+      });
+    }
+    if (!networks.length) {
+      notes.push({ severity: "info", text: "No Wi-Fi entered, so this is scored on the fixed interferers only." });
+    }
+
+    // --- BLE advertising -------------------------------------------------
+    BLE_ADVERTISING.forEach((b) => {
+      const d = Math.abs(ieee802154Centre(ch) - b.freq);
+      if (d <= 2) {
+        penalty += 12;
+        notes.push({ severity: "warn",
+          text: `Lands on Bluetooth LE advertising channel ${b.ch} (${b.freq} MHz) - every battery device in the house beacons here.` });
+      }
+    });
+
+    // --- microwave oven --------------------------------------------------
+    const c = ieee802154Centre(ch);
+    if (c >= MICROWAVE.lo && c <= MICROWAVE.hi) {
+      const closeness = 1 - Math.abs(c - MICROWAVE.peak) / ((MICROWAVE.hi - MICROWAVE.lo) / 2);
+      penalty += 10 * Math.max(0, closeness);
+      notes.push({ severity: "warn",
+        text: "In the microwave oven band. If your mesh drops while dinner cooks, this is why." });
+    }
+
+    // --- channel 26 ------------------------------------------------------
+    if (ch === 26) {
+      penalty += 14;
+      notes.push({ severity: "warn",
+        text: "Channel 26 is clean but most radios are forced to transmit at reduced power here, so range suffers. Many devices refuse to join it at all." });
+    }
+    if (ch === 11) {
+      penalty += 4;
+      notes.push({ severity: "info",
+        text: "Channel 11 is the 802.15.4 default, so it is the most crowded with your neighbours' meshes." });
+    }
+
+    // --- separation from a sibling mesh ----------------------------------
+    if (opts.avoidChannel != null) {
+      const sep = Math.abs(ch - opts.avoidChannel);
+      if (sep === 0) {
+        penalty += 60;
+        notes.push({ severity: "bad", text: "Same channel as your other 802.15.4 mesh. They will collide." });
+      } else if (sep === 1) {
+        penalty += 25;
+        notes.push({ severity: "warn", text: "Adjacent to your other 802.15.4 mesh - leave more room." });
+      }
+    }
+
+    const score = Math.max(0, Math.min(100, Math.round(100 - penalty)));
+    if (!notes.some((n) => n.severity !== "info") && score >= 80) {
+      notes.unshift({ severity: "good", text: "Clear of everything you have told us about." });
+    }
+    return { channel: ch, centre: c, score, notes, band: zBand };
+  }
+
+  function rank(opts) {
+    return ZIGBEE_CHANNELS.map((ch) => scoreChannel(ch, opts))
+      .sort((a, b) => b.score - a.score || a.channel - b.channel);
+  }
+
+  /**
+   * Pick a Zigbee channel and a Thread channel that do not fight each
+   * other. Zigbee is chosen first because Zigbee devices are far fussier
+   * about being re-paired than Thread devices are.
+   */
+  function plan(opts) {
+    opts = opts || {};
+    const zigbee = rank(opts)[0];
+    const thread = opts.useThread
+      ? rank(Object.assign({}, opts, { avoidChannel: zigbee.channel }))[0]
+      : null;
+    return { zigbee, thread, wifi: planWifi(opts) };
+  }
+
+  /**
+   * Which of the region's non-overlapping Wi-Fi channels is least busy,
+   * counting only networks that are not yours.
+   */
+  function planWifi(opts) {
+    const region = REGIONS[opts.region || "us"];
+    const nets = (opts.wifiNetworks || []).filter((n) => !n.mine);
+    const scored = region.nonOverlap.map((ch) => {
+      const band = wifiBand(ch, 20);
+      let load = 0;
+      nets.forEach((n) => {
+        const nb = wifiBand(n.channel, n.width || 20, n.secondary);
+        if (!nb) return;
+        const ov = overlapWidth(band, nb);
+        if (ov > 0) load += (ov / 22) * (n.weight === undefined ? 1 : n.weight);
+      });
+      return { channel: ch, load: Math.round(load * 100) / 100 };
+    }).sort((a, b) => a.load - b.load || a.channel - b.channel);
+    return { region: region.name, note: region.note, options: scored, best: scored[0] };
+  }
+
+  return { wifiCentre, wifiBand, ieee802154Centre, ieee802154Band, overlapWidth,
+           collisionFactor, skirtFactor, wifiCost, scoreChannel, rank, plan, planWifi,
+           ZIGBEE_CHANNELS, BLE_ADVERTISING, MICROWAVE, REGIONS };
+})();
+</script>
+
+<script>
+/* ---------------------------------------------------------------- UI --- */
+const $ = (s) => document.querySelector(s);
+let nets = [];
+
+const PRESETS = {
+  us:   [{channel:1,weight:1},{channel:6,weight:1},{channel:11,weight:1}],
+  eu:   [{channel:1,weight:1},{channel:5,weight:1},{channel:9,weight:1},{channel:13,weight:1}],
+  one:  [{channel:6,weight:1,mine:true,label:"my router"}],
+  // A block of flats: neighbours everywhere, and at least one router left on
+  // 40 MHz, which is what actually closes off the top of the band.
+  busy: [{channel:1,weight:1},{channel:1,weight:0.6},{channel:3,weight:0.6},
+         {channel:6,weight:1,mine:true},{channel:6,weight:0.6},
+         {channel:9,weight:0.6},{channel:11,weight:1},
+         {channel:11,weight:0.6,width:40,secondary:"above"}],
+  clear:[],
+};
+
+function netRow(n, i) {
+  const wrap = document.createElement("div");
+  wrap.className = "row";
+  const chans = RF.REGIONS[$("#region").value].wifi;
+  wrap.innerHTML =
+    `<select data-f="channel">${chans.map((c) =>
+      `<option value="${c}"${c === n.channel ? " selected" : ""}>ch ${c}</option>`).join("")}</select>
+     <select data-f="width">
+       <option value="20"${n.width !== 40 ? " selected" : ""}>20 MHz</option>
+       <option value="40"${n.width === 40 ? " selected" : ""}>40 MHz</option></select>
+     <select data-f="weight">
+       <option value="1"${n.weight === 1 ? " selected" : ""}>strong</option>
+       <option value="0.6"${n.weight === 0.6 ? " selected" : ""}>medium</option>
+       <option value="0.3"${n.weight === 0.3 ? " selected" : ""}>weak</option></select>
+     <button class="link x" title="Remove">&times;</button>`;
+  wrap.querySelectorAll("select").forEach((sel) => {
+    sel.onchange = () => {
+      const f = sel.dataset.f;
+      nets[i][f] = parseFloat(sel.value);
+      render();
+    };
+  });
+  wrap.querySelector("button").onclick = () => { nets.splice(i, 1); renderNets(); render(); };
+  return wrap;
+}
+
+function renderNets() {
+  const box = $("#nets");
+  box.innerHTML = "";
+  if (!nets.length) {
+    box.innerHTML = '<p class="hint" style="margin:4px 0">No 2.4 GHz Wi-Fi at all. ' +
+      'Lucky you &mdash; almost any channel will do.</p>';
+    return;
+  }
+  nets.forEach((n, i) => box.appendChild(netRow(n, i)));
+}
+
+function opts() {
+  return {
+    region: $("#region").value,
+    wifiNetworks: nets,
+    useThread: $("#useThread").checked,
+  };
+}
+
+/* ------------------------------------------------------------- chart --- */
+const F_LO = 2398, F_HI = 2492, W = 900, H = 190;
+const x = (f) => ((f - F_LO) / (F_HI - F_LO)) * (W - 60) + 40;
+
+function chart(ranked, plan) {
+  const best = plan.zigbee ? plan.zigbee.channel : null;
+  const bestT = plan.thread ? plan.thread.channel : null;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="2.4 GHz spectrum">`;
+  // frequency axis
+  for (let f = 2400; f <= 2490; f += 10) {
+    s += `<line x1="${x(f)}" y1="20" x2="${x(f)}" y2="${H - 46}" stroke="var(--line)" stroke-width="1"/>`;
+    s += `<text x="${x(f)}" y="${H - 30}" fill="var(--mute)" font-size="10" text-anchor="middle">${f}</text>`;
+  }
+  s += `<text x="${W - 6}" y="${H - 30}" fill="var(--mute)" font-size="10" text-anchor="end">MHz</text>`;
+
+  // wifi blocks
+  nets.forEach((n, i) => {
+    const b = RF.wifiBand(n.channel, n.width || 20, n.secondary);
+    if (!b) return;
+    const y = 24 + (i % 4) * 9;
+    s += `<rect x="${x(b.lo)}" y="${y}" width="${x(b.hi) - x(b.lo)}" height="7" rx="3"
+           fill="var(--wifi)" opacity="${0.22 + 0.5 * (n.weight === undefined ? 1 : n.weight)}"/>`;
+    s += `<text x="${(x(b.lo) + x(b.hi)) / 2}" y="${y + 6}" fill="#04121f" font-size="7"
+           text-anchor="middle" font-weight="700">${n.channel}</text>`;
+  });
+
+  // 802.15.4 channels
+  ranked.forEach((r) => {
+    const cx = x(r.centre);
+    const col = r.score >= 70 ? "var(--good)" : r.score >= 45 ? "var(--warn)" : "var(--bad)";
+    const h = 10 + (r.score / 100) * 46;
+    s += `<rect x="${cx - 4}" y="${H - 56 - h}" width="8" height="${h}" rx="2" fill="${col}"
+           opacity="${r.channel === best || r.channel === bestT ? 1 : 0.5}"/>`;
+    if (r.channel === best)
+      s += `<text x="${cx}" y="${H - 62 - h}" fill="var(--good)" font-size="10"
+             text-anchor="middle" font-weight="700">Zigbee</text>`;
+    if (r.channel === bestT)
+      s += `<text x="${cx}" y="${H - 62 - h}" fill="var(--accent)" font-size="10"
+             text-anchor="middle" font-weight="700">Thread</text>`;
+    s += `<text x="${cx}" y="${H - 8}" fill="var(--mute)" font-size="9" text-anchor="middle">${r.channel}</text>`;
+  });
+  s += `<text x="4" y="${H - 8}" fill="var(--mute)" font-size="9">ch</text>`;
+  return s + "</svg>";
+}
+
+/* ------------------------------------------------------------ render --- */
+function render() {
+  const o = opts();
+  const ranked = RF.rank(o);
+  const plan = RF.plan(o);
+  const useZ = $("#useZigbee").checked;
+
+  // --- verdict cards
+  const cards = [];
+  const cls = (s) => (s >= 70 ? "good" : s >= 45 ? "warn" : "bad");
+  if (useZ) {
+    cards.push(`<div class="big ${cls(plan.zigbee.score)}">
+      <div class="k">Zigbee channel</div><div class="v">${plan.zigbee.channel}</div>
+      <div class="s">${plan.zigbee.centre} MHz &middot; score ${plan.zigbee.score}</div></div>`);
+  }
+  if (plan.thread) {
+    cards.push(`<div class="big ${cls(plan.thread.score)}">
+      <div class="k">Thread channel</div><div class="v">${plan.thread.channel}</div>
+      <div class="s">${plan.thread.centre} MHz &middot; score ${plan.thread.score}</div></div>`);
+  }
+  const w = plan.wifi.best;
+  cards.push(`<div class="big">
+    <div class="k">Wi-Fi 2.4 GHz</div><div class="v">${w ? w.channel : "&mdash;"}</div>
+    <div class="s">${w && w.load === 0 ? "nothing else on it" : "least busy of " +
+      RF.REGIONS[o.region].nonOverlap.join(", ")}</div></div>`);
+  $("#verdict").innerHTML = cards.join("");
+
+  const bestScore = useZ ? plan.zigbee.score : (plan.thread ? plan.thread.score : 100);
+  $("#planNote").innerHTML = bestScore >= 70
+    ? "This is a clean plan. Move the mesh, re-pair anything that does not follow, and you are done."
+    : bestScore >= 45
+      ? "Workable but compromised &mdash; the band is busy where you are. Read " +
+        "<b>If nothing scores well</b> below before you settle for it."
+      : "Nothing here is good. Every 802.15.4 channel is sitting under Wi-Fi. " +
+        "Changing mesh channel will not save you &mdash; move your own Wi-Fi to " +
+        "5&nbsp;GHz first. See <b>If nothing scores well</b>.";
+
+  // --- chart
+  $("#chart").innerHTML = chart(ranked, { zigbee: useZ ? plan.zigbee : null, thread: plan.thread });
+  if (!document.getElementById("rows")) return;
+
+  // --- table
+  $("#rows").innerHTML = ranked.map((r) => {
+    const col = r.score >= 70 ? "var(--good)" : r.score >= 45 ? "var(--warn)" : "var(--bad)";
+    const isTop = (useZ && r.channel === plan.zigbee.channel) ||
+                  (plan.thread && r.channel === plan.thread.channel);
+    return `<tr class="${isTop ? "top" : ""}">
+      <td><span class="chan">${r.channel}</span><br><span class="freq">${r.centre} MHz</span></td>
+      <td><span class="sc" style="color:${col}">${r.score}</span>
+          <div class="bar"><i style="width:${r.score}%;background:${col}"></i></div></td>
+      <td>${r.notes.map((n) => `<span class="note ${n.severity}">${n.text}</span>`).join("")}</td>
+    </tr>`;
+  }).join("");
+
+  // --- how to
+  const z = useZ ? plan.zigbee.channel : null;
+  const t = plan.thread ? plan.thread.channel : null;
+  $("#howto").innerHTML = `
+    <p><b>Before you touch anything:</b> back up your coordinator. Changing
+       channel makes some devices drop off and need re-pairing &mdash; battery
+       sensors and older bulbs are the usual offenders. Mains-powered routers
+       normally follow on their own within a few minutes.</p>
+    ${z ? `<p><b>Zigbee2MQTT</b> &rarr; set <code>channel: ${z}</code> under
+       <code>advanced:</code> in <code>configuration.yaml</code>, restart, then
+       leave it half an hour for the mesh to settle.</p>
+    <p><b>ZHA</b> &rarr; Settings &rarr; Devices &rarr; Zigbee Home Automation
+       &rarr; Configure &rarr; Network settings. Changing channel here forms a
+       new network on some radios, so read the warning it gives you.</p>
+    <p><b>deCONZ / Phoscon</b> &rarr; Gateway &rarr; Settings &rarr; Network
+       &rarr; Channel ${z}.</p>` : ""}
+    ${t ? `<p><b>Thread</b> &rarr; you cannot usually set a channel directly.
+       You create a new Thread operational dataset on channel ${t} and migrate
+       the border router to it &mdash; in Home Assistant, Settings &rarr;
+       Devices &rarr; Thread. Every Thread device has to be re-commissioned
+       onto the new network, so do this before you have many of them, not
+       after.</p>` : ""}
+    <p><b>Wi-Fi</b> &rarr; set the 2.4&nbsp;GHz radio to channel
+       ${w ? w.channel : "&mdash;"} and to 20&nbsp;MHz width, and turn off any
+       "auto channel" setting &mdash; otherwise the router wanders back on top
+       of your mesh next time it reboots.</p>`;
+}
+
+function asText() {
+  const o = opts(), plan = RF.plan(o);
+  const L = ["2.4 GHz channel plan", "=====================", ""];
+  if ($("#useZigbee").checked)
+    L.push(`Zigbee : channel ${plan.zigbee.channel}  (${plan.zigbee.centre} MHz, score ${plan.zigbee.score}/100)`);
+  if (plan.thread)
+    L.push(`Thread : channel ${plan.thread.channel}  (${plan.thread.centre} MHz, score ${plan.thread.score}/100)`);
+  if (plan.wifi.best)
+    L.push(`Wi-Fi  : channel ${plan.wifi.best.channel} at 20 MHz  (${RF.REGIONS[o.region].name})`);
+  L.push("", "Wi-Fi entered:");
+  nets.forEach((n) => L.push(`  ch ${n.channel}  ${n.width || 20} MHz  ` +
+    (n.weight === 1 ? "strong" : n.weight === 0.6 ? "medium" : "weak")));
+  if (!nets.length) L.push("  (none)");
+  L.push("", "Reasons:");
+  ($("#useZigbee").checked ? plan.zigbee.notes : []).forEach((n) => L.push("  - " + n.text));
+  L.push("", "Turn off auto-channel on the router, or it will wander back.");
+  return L.join("\n");
+}
+
+/* --------------------------------------------------------------- init -- */
+(function init() {
+  const rs = $("#region");
+  rs.innerHTML = Object.keys(RF.REGIONS).map((k) =>
+    `<option value="${k}">${RF.REGIONS[k].name}</option>`).join("");
+  rs.onchange = () => {
+    $("#regionNote").textContent = RF.REGIONS[rs.value].note;
+    const legal = RF.REGIONS[rs.value].wifi;
+    nets = nets.filter((n) => legal.indexOf(n.channel) !== -1);
+    renderNets(); render();
+  };
+  $("#regionNote").textContent = RF.REGIONS[rs.value].note;
+
+  document.querySelectorAll("[data-preset]").forEach((b) => {
+    b.onclick = () => {
+      nets = JSON.parse(JSON.stringify(PRESETS[b.dataset.preset]));
+      if (b.dataset.preset === "eu") rs.value = "eu";
+      if (b.dataset.preset === "us") rs.value = "us";
+      $("#regionNote").textContent = RF.REGIONS[rs.value].note;
+      renderNets(); render();
+    };
+  });
+  $("#add").onclick = () => {
+    const legal = RF.REGIONS[rs.value].wifi;
+    nets.push({ channel: legal[0], width: 20, weight: 0.6 });
+    renderNets(); render();
+  };
+  $("#useThread").onchange = render;
+  $("#useZigbee").onchange = render;
+  $("#copyBtn").onclick = () => {
+    const t = asText();
+    const done = () => { $("#copyBtn").textContent = "Copied"; setTimeout(() => $("#copyBtn").textContent = "Copy as text", 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, () => fallback(t, done));
+    else fallback(t, done);
+  };
+  function fallback(t, done) {
+    const ta = document.createElement("textarea");
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { alert(t); }
+    document.body.removeChild(ta);
+  }
+
+  nets = JSON.parse(JSON.stringify(PRESETS.us));
+  renderNets(); render();
+})();
+</script>
+</html>
