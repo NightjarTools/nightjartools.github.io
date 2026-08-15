@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dinner Picker Lite — what's for dinner tonight? — Nightjar Tools</title>
+<meta name="description" content="Tap once, get three dinner ideas with ingredients and a recipe. Runs entirely in your browser. Nothing is sent anywhere.">
+<style>
+:root { --bg:#0E1520; --surface:#141F2E; --accent:#F5B301; --accent2:#3B9EFF; --text:#E6EDF5; --muted:#8FA3BA; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'JetBrains Mono', ui-monospace, Menlo, 'SF Mono', monospace; margin:0; padding:2rem 1rem; }
+.wrap { max-width:720px; margin:0 auto; text-align:center; }
+h1 { color:var(--accent); font-size:1.5rem; margin-bottom:.3rem; }
+.sub { color:var(--muted); font-size:.85rem; margin-bottom:2rem; }
+button.spin { background:var(--accent); color:#0E1520; border:0; border-radius:10px; font:inherit; font-weight:700; font-size:1.1rem; padding:1rem 2.2rem; cursor:pointer; }
+button.spin:hover { filter:brightness(1.1); }
+.opts { display:flex; flex-direction:column; gap:.7rem; margin:1.6rem 0; }
+.opt { background:var(--surface); border:1px solid #24344a; border-radius:10px; padding:1rem; cursor:pointer; font:inherit; color:var(--text); font-size:1rem; transition:border-color .15s; }
+.opt:hover { border-color:var(--accent2); }
+.opt.picked { border-color:var(--accent); }
+.detail { text-align:left; background:var(--surface); border-radius:10px; padding:1.3rem 1.5rem; margin-top:1rem; display:none; }
+.detail h2 { color:var(--accent); margin:0 0 .6rem; font-size:1.15rem; }
+.detail h3 { color:var(--accent2); font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; margin:1rem 0 .4rem; }
+.ing { display:inline-block; background:#1c2a3d; color:var(--muted); border-radius:5px; padding:.15rem .5rem; margin:.15rem .25rem .15rem 0; font-size:.8rem; }
+ol { margin:.3rem 0 0; padding-left:1.3rem; }
+li { margin-bottom:.35rem; font-size:.9rem; line-height:1.5; }
+.foot { color:var(--muted); font-size:.8rem; margin-top:2.5rem; border-top:1px solid #24344a; padding-top:1.2rem; line-height:1.7; }
+.foot a { color:var(--accent2); }
+.badge { color:var(--muted); font-size:.75rem; margin-top:.8rem; }
+</style></head><body><div class="wrap">
+<h1>🌙 Dinner Picker Lite</h1>
+<p class="sub">Can't decide what's for dinner? Tap the button, get three ideas, pick one.<br>15 dinners, each with ingredients and a plain recipe. Runs entirely in your browser — nothing is sent anywhere.</p>
+<button class="spin" id="spin">🎲 What's for dinner?</button>
+<div class="opts" id="opts"></div>
+<div class="detail" id="detail"></div>
+<p class="badge" id="badge"></p>
+<div class="foot">
+This is the free version — it has 15 dinners and lives in a browser tab.<br>
+The <a href="https://blakesivon.gumroad.com/l/dinner-picker">full Kitchen Pack ($8)</a> puts this on your Home Assistant wall tablet:
+54 dinners, ingredient search ("what can we make with chicken and tortillas?"),
+one-tap send-to-grocery-list, add/remove your own dinners, and the whole recipe book. Survives restarts.<br><br>
+<a href="https://nightjartools.github.io">Nightjar Tools</a> — small tools for Home Assistant and the homelab. Offline. No telemetry.
+</div></div>
+<script>
+const DINNERS = [{"n": "Breakfast for Dinner", "i": "Eggs, Bacon, Butter, Toast, Hash browns, Maple syrup, Orange juice", "r": ["Cook bacon until crisp; save a little fat.", "Crisp hash browns in the bacon fat.", "Cook eggs your favorite way in butter; make toast.", "Plate it all up. Pancakes and syrup optional but encouraged."]}, {"n": "Chicken Alfredo", "i": "Chicken breast, Fettuccine, Heavy cream, Parmesan, Butter, Garlic, Parsley", "r": ["Season and sear chicken until cooked through; slice.", "Boil fettuccine; reserve a cup of pasta water.", "Melt butter with garlic, add cream, then whisk in parmesan off the heat.", "Toss pasta and chicken in the sauce, loosening with pasta water; top with parsley."]}, {"n": "Chicken Fajitas", "i": "Chicken breast, Bell peppers, Onion, Tortillas, Fajita seasoning, Lime, Sour cream, Cheese", "r": ["Slice chicken, peppers, and onion into strips.", "Toss with fajita seasoning and oil; sear in a very hot skillet until charred at the edges.", "Squeeze lime over the pan.", "Serve sizzling with warm tortillas, cheese, and sour cream."]}, {"n": "Chicken Noodle Soup", "i": "Chicken breast, Egg noodles, Carrots, Celery, Onion, Chicken broth, Garlic, Thyme, Bay leaf", "r": ["Saute onion, carrots, and celery; add garlic.", "Add broth, chicken, thyme, and bay leaf; simmer until chicken is cooked, then shred.", "Add noodles and cook until tender.", "Season well and serve hot."]}, {"n": "Chicken Stir Fry", "i": "Chicken breast, Soy sauce, Broccoli, Bell peppers, Carrots, Garlic, Ginger, Rice, Cornstarch", "r": ["Slice chicken thin and toss with cornstarch and a splash of soy.", "Stir-fry chicken in a screaming-hot pan; set aside.", "Stir-fry veggies with garlic and ginger.", "Return chicken, add soy sauce, and serve over rice."]}, {"n": "Chili", "i": "Ground beef, Kidney beans, Tomatoes, Chili powder, Onion, Garlic, Bell pepper, Cumin", "r": ["Brown beef with onion, garlic, and bell pepper.", "Stir in chili powder and cumin; cook 1 min.", "Add tomatoes and beans; simmer at least 30 min (longer is better).", "Season to taste; serve with cheese, crackers, or cornbread."]}, {"n": "Fried Rice", "i": "Day-old rice, Eggs, Peas, Carrots, Green onions, Soy sauce, Sesame oil, Garlic, Ham or chicken (optional)", "r": ["Scramble eggs in a hot wok; set aside.", "Stir-fry garlic, carrots, and peas; add meat if using.", "Add cold rice, breaking it up, and stir-fry until toasted.", "Season with soy and sesame oil; fold in eggs and green onions."]}, {"n": "Grilled Salmon", "i": "Salmon fillets, Lemon, Garlic, Butter, Dill, Asparagus, Olive oil", "r": ["Rub salmon with oil, salt, and garlic.", "Grill or pan-sear skin-side down 4-5 min, flip for 2-3 more.", "Grill asparagus alongside in olive oil.", "Top salmon with lemon-dill butter."]}, {"n": "Homemade Burgers", "i": "Ground beef, Buns, Lettuce, Tomato, Onion, Cheese, Pickles, Condiments", "r": ["Form loose 1/3-lb patties; salt generously just before cooking.", "Sear in a hot pan or grill 3-4 min per side; add cheese at the end.", "Toast the buns.", "Build with lettuce, tomato, onion, pickles, and your condiments."]}, {"n": "Pot Roast", "i": "Chuck roast, Carrots, Potatoes, Onion, Beef broth, Garlic, Thyme, Rosemary", "r": ["Sear the roast hard on all sides.", "Add broth, garlic, and herbs; cover and braise at 300 F.", "After 2 hours add carrots, potatoes, and onion.", "Cook 1-2 hours more until fork-tender; serve with the pan juices."]}, {"n": "Sheet Pan Sausage and Veggies", "i": "Smoked sausage, Potatoes, Bell peppers, Red onion, Zucchini, Olive oil, Italian seasoning, Garlic powder", "r": ["Slice sausage and chop veggies into similar sizes.", "Toss everything with oil and seasonings on a sheet pan.", "Roast at 425 F for 30-35 min, stirring once.", "Serve straight off the pan."]}, {"n": "Sloppy Joes", "i": "Ground beef, Buns, Ketchup, Tomato sauce, Onion, Bell pepper, Worcestershire, Brown sugar", "r": ["Brown beef with onion and bell pepper.", "Stir in tomato sauce, ketchup, Worcestershire, and a spoon of brown sugar.", "Simmer 10-15 min until thick.", "Pile onto toasted buns."]}, {"n": "Spaghetti and Meatballs", "i": "Spaghetti, Ground beef, Breadcrumbs, Egg, Parmesan, Marinara sauce, Garlic, Onion, Basil", "r": ["Mix beef, breadcrumbs, egg, parmesan, and minced garlic; roll into meatballs.", "Brown meatballs, then simmer them in marinara 15 min.", "Boil spaghetti until al dente.", "Serve sauce and meatballs over pasta with parmesan and basil."]}, {"n": "Street Tacos", "i": "Tortillas, Skirt steak, Onion, Cilantro, Lime, Salsa, Avocado", "r": ["Season steak with salt, pepper, and lime juice; sear in a hot pan 3-4 min per side, then rest and dice.", "Warm tortillas in a dry skillet.", "Fill tortillas with steak, diced onion, and cilantro.", "Top with salsa and avocado; squeeze lime over everything."]}, {"n": "Tomato Soup and Grilled Cheese", "i": "Canned tomatoes, Onion, Garlic, Butter, Heavy cream, Bread, Cheddar, Basil", "r": ["Saute onion and garlic in butter; add tomatoes and simmer 15 min.", "Blend smooth and finish with cream and basil.", "Butter bread, fill with cheddar, and griddle until golden and melted.", "Cut diagonally. This is non-negotiable. Dunk."]}];
+const opts = document.getElementById('opts'), detail = document.getElementById('detail'), badge = document.getElementById('badge');
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function spin() {
+  detail.style.display = 'none';
+  const shuffled = [...DINNERS].sort(() => Math.random() - .5).slice(0, 3);
+  opts.innerHTML = '';
+  shuffled.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.textContent = d.n;
+    b.onclick = () => show(d, b);
+    opts.appendChild(b);
+  });
+  badge.textContent = 'Tap one to see ingredients and the recipe.';
+}
+function show(d, btn) {
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('picked'));
+  btn.classList.add('picked');
+  detail.innerHTML = '<h2>🍽️ ' + esc(d.n) + '</h2>'
+    + '<h3>Ingredients</h3>' + d.i.split(',').map(x => '<span class="ing">' + esc(x.trim()) + '</span>').join('')
+    + '<h3>How to make it</h3><ol>' + d.r.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>';
+  detail.style.display = 'block';
+  badge.textContent = '';
+}
+document.getElementById('spin').onclick = spin;
+</script></body></html>
